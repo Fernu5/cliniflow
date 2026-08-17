@@ -24,6 +24,8 @@
     String inicialNome = !nome.isEmpty() ? nome.substring(0, 1).toUpperCase() : "U";
     String inicialSobrenome = !sobrenome.isEmpty() ? sobrenome.substring(0, 1).toUpperCase() : "";
     String iniciais = inicialNome + inicialSobrenome;
+    
+    String erro = request.getParameter("erro");
 %>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -36,7 +38,7 @@
     
     <style>
         /* =========================================================================
-           RECORTAR E COLAR NO SEU STYLE.CSS (Depois dê Ctrl+F5)
+           RECORTAR E COLAR NO SEU STYLE.CSS (Depois dê um Ctrl+F5 no navegador)
            ========================================================================= */
         body.home-body, .dashboard-layout { height: 100vh; overflow: hidden; margin: 0; }
         .main-content { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background-color: #FFFFFF; }
@@ -141,6 +143,10 @@
             transition: background-color 0.2s;
         }
         .btn-deletar:hover { background-color: #FFF5F5; }
+        
+        .alert-error {
+            background-color: #FFF5F5; color: #E53E3E; padding: 14px 24px; border-radius: 8px; margin: 24px 40px 0 40px; font-weight: bold; border: 1px solid #FC8181; font-size: 14px;
+        }
         /* ========================================================================= */
     </style>
 </head>
@@ -148,7 +154,7 @@
 
 <div class="dashboard-layout">
     
-    <!-- BARRA LATERAL (Padrão Sincronizado) -->
+    <!-- BARRA LATERAL UNIFICADA -->
     <aside class="sidebar">
         <div class="sidebar-logo">Clini<span>Flow</span></div>
         <ul class="nav-menu">
@@ -166,6 +172,12 @@
     <!-- ÁREA PRINCIPAL -->
     <main class="main-content">
         
+        <% if ("falha_inativar".equals(erro) || "excecao".equals(erro)) { %>
+            <div class="alert-error">
+                <i class="fa-solid fa-triangle-exclamation"></i> Ocorreu um erro ao processar sua solicitação. Tente novamente mais tarde.
+            </div>
+        <% } %>
+
         <header class="header-clean">
             <h2>Meu Perfil</h2>
             <i class="fa-regular fa-bell" style="font-size: 24px; color: #A0AEC0; cursor: pointer;"></i>
@@ -183,6 +195,7 @@
                     </div>
                 </div>
 
+                <!-- Formulário de Atualização (Controlado pelo UsuarioController) -->
                 <form action="usuario" method="POST" class="perfil-form">
                     
                     <div class="input-group-perfil">
@@ -213,7 +226,7 @@
                     <button type="submit" class="btn-salvar">Salvar Alterações</button>
                 </form>
 
-                <!-- Formulário isolado para exclusão/inativação segura da conta com confirmação -->
+                <!-- Formulário Seguro de Exclusão (Controlado pelo PerfilController) -->
                 <form action="deletar-conta" method="POST" class="perfil-form" onsubmit="return confirm('Atenção: Deseja realmente excluir/desativar sua conta? Você perderá o acesso ao sistema.');">
                     <button type="submit" class="btn-deletar">Deletar Conta</button>
                 </form>

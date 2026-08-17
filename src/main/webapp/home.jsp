@@ -70,7 +70,33 @@
 
     <!-- ÁREA PRINCIPAL -->
     <main class="main-content">
-        
+        <!-- MENSAGEM FLUTUANTE DE DADOS ATUALIZADOS -->
+        <% 
+            String atualizado = request.getParameter("atualizado");
+            if ("true".equals(atualizado)) {
+        %>
+            <div id="toast-alerta" class="toast-sucesso">
+                <div class="toast-conteudo">
+                    <i class="fa-solid fa-circle-check"></i> 
+                    <span>Perfil atualizado com sucesso!</span>
+                </div>
+                <!-- O "X" para fechar -->
+                <i class="fa-solid fa-xmark toast-fechar" onclick="fecharToast()"></i>
+            </div>
+
+            <!-- Pequeno script para fechar no "X" ou sumir sozinho após 4 segundos -->
+            <script>
+                setTimeout(fecharToast, 4000);
+
+                function fecharToast() {
+                    var toast = document.getElementById("toast-alerta");
+                    if(toast) {
+                        toast.style.opacity = "0"; // Faz sumir suavemente
+                        setTimeout(() => toast.remove(), 300); // Remove do HTML após a animação
+                    }
+                }
+            </script>
+        <% } %>
         <header class="topbar">
             <div class="topbar-user">
                 <p>Bem-vindo,</p>
