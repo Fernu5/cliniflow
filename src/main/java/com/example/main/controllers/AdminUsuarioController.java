@@ -18,18 +18,14 @@ public class AdminUsuarioController extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		HttpSession session = request.getSession();
 		Perfil usuarioLogado = (Perfil) session.getAttribute("usuarioLogado");
-		
-		// Validação de segurança: Só admin acessa
+
 		if (usuarioLogado != null && usuarioLogado.getUsuario() != null && usuarioLogado.getUsuario().isAdmUsuario()) {
 			try {
-				// Captura o ID do Administrador logado
 				int idAdmin = usuarioLogado.getUsuario().getIdUsuario();
 				
-				// Busca os dados reais do banco PASSANDO O ID do admin para ser ignorado na lista
 				java.util.HashSet<Perfil> listaUsuarios = com.example.main.dao.PerfilDAO.getTodosUsuariosComPerfil(idAdmin);
 				request.setAttribute("listaUsuarios", listaUsuarios);
 				
-				// Direciona para a tela
 				request.getRequestDispatcher("admin-usuarios.jsp").forward(request, response);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -42,7 +38,30 @@ public class AdminUsuarioController extends HttpServlet {
 	
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// Futuras ações de bloquear/editar usuários via POST virão aqui
-		doGet(request, response);
+		String acao = request.getParameter("acao");
+		
+		if ("toggle_status".equals(acao)) {
+			try {
+				int idUsuario = Integer.parseInt(request.getParameter("id_usuario"));
+				String novoStatusStr = request.getParameter("novo_status");
+				
+				com.example.main.models.Usuario usuario = com.example.main.dao.UsuarioDAO.getUsuarioById(idUsuario);
+				
+				if (usuario != null) {
+					if ("ATIVO".equals(novoStatusStr)) {
+						usuario.setStatusUsuario(com.example.main.enums.StatusUsuario.ATIVO);
+					} else {
+						usuario.setStatusUsuario(com.example.main.enums.StatusUsuario.DESATIVADO);
+					}
+					
+					com.example.main.dao.UsuarioDAO.putUsuarioById(usuario);
+				}
+				
+				response.sendRedirect("admin-usuarios");
+			} catch (Exception e) {
+				e.printStackTrace();
+				response.sendRedirect("admin-usuarios");
+			}
+		}
 	}
 }

@@ -1,10 +1,15 @@
 package com.example.main.controllers;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import com.example.main.dao.ConsultaDAO;
+import com.example.main.dao.EspecialidadeDAO;
 import com.example.main.models.Consulta;
+import com.example.main.models.Especialidade;
 import com.example.main.models.Perfil;
 
 import jakarta.servlet.ServletException;
@@ -21,12 +26,10 @@ public class ConsultaController extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String acao = request.getParameter("acao");
 		
-		// Intercepta a requisição de cancelamento
 		if ("cancelar".equals(acao)) {
 			try {
 				int idConsulta = Integer.parseInt(request.getParameter("id_consulta"));
 				
-				// Chama o DAO para mudar o status para Cancelada
 				boolean sucesso = ConsultaDAO.cancelarConsulta(idConsulta);
 				
 				if (sucesso) {
@@ -65,11 +68,9 @@ public class ConsultaController extends HttpServlet {
 		
 		if (usuarioLogado != null) {
 			try {					
-				// 1. Busca a lista do histórico (O que o seu colega já tinha feito)
 				consultasPorUsuarioLogado = ConsultaDAO.getConsultaByPacienteId(usuarioLogado.getIdPerfil());				
 				request.setAttribute("consultasUsuarioLogado", consultasPorUsuarioLogado);
 				
-				// 2. Busca a próxima consulta para exibir no card superior
 				Consulta proximaConsulta = ConsultaDAO.getProximaConsultaByPacienteId(usuarioLogado.getIdPerfil());
 				if (proximaConsulta != null && proximaConsulta.getMedicoConsulta() != null) {
 					String nomeMedico = "Dr(a). " + proximaConsulta.getMedicoConsulta().getUsuario().getNomeUsuario();
@@ -78,7 +79,6 @@ public class ConsultaController extends HttpServlet {
 					request.setAttribute("proxData", dataFormatada);
 				}
 				
-				// 3. Busca as estatísticas para preencher os três cards centrais
 				request.setAttribute("consultasDia", ConsultaDAO.countConsultasByFiltro(usuarioLogado.getIdPerfil(), "DIA"));
 				request.setAttribute("consultasMes", ConsultaDAO.countConsultasByFiltro(usuarioLogado.getIdPerfil(), "MES"));
 				request.setAttribute("totalConsultas", ConsultaDAO.countConsultasByFiltro(usuarioLogado.getIdPerfil(), "TOTAL"));
@@ -86,7 +86,6 @@ public class ConsultaController extends HttpServlet {
 				request.getRequestDispatcher("home.jsp").forward(request, response);
 			} catch (Exception e) {
 				e.printStackTrace();
-				// Em caso de erro, ainda manda para a home para não dar tela branca
 				request.getRequestDispatcher("home.jsp").forward(request, response);
 			}
 		} else {
@@ -98,10 +97,36 @@ public class ConsultaController extends HttpServlet {
 		HttpSession session = request.getSession();
 		Perfil usuarioLogado = (Perfil) session.getAttribute("usuarioLogado");
 		HashSet<Consulta> consultasPorUsuarioLogado = new HashSet<Consulta>();
+		HashMap<Integer, String> mapaEspecialidades = new HashMap<>();
 		
 		if (usuarioLogado != null) {
 			try {					
 				consultasPorUsuarioLogado = ConsultaDAO.getConsultaByPacienteId(usuarioLogado.getIdPerfil());
+				HashSet<Especialidade> todasEsp = EspecialidadeDAO.getEspecialidades();
+				if (todasEsp.size() > 0) {
+					for (Consulta c : consultasPorUsuarioLogado) {
+                        if (c.getMedicoConsulta() != null) {
+                            int idMedico = c.getMedicoConsulta().getIdPerfil();
+                            
+                            if (!mapaEspecialidades.containsKey(idMedico)) {
+                                List<Integer> idsEsp = EspecialidadeDAO.getIdsEspecialidadesDoMedico(idMedico);
+                                List<String> nomesEsp = new ArrayList<>();
+                                
+                                for (Integer id : idsEsp) {
+                                    for (Especialidade e : todasEsp) {
+                                        if (e.getIdEspecialidade() == id) {
+                                            nomesEsp.add(e.getTipoEspecialidade().name());
+                                        }
+                                    }
+                                }
+                                
+                                String textoEsp = nomesEsp.isEmpty() ? "Clínico Geral" : String.join(", ", nomesEsp);
+                                mapaEspecialidades.put(idMedico, textoEsp);
+                            }
+                        }
+                    }
+				}
+				request.setAttribute("mapaEspecialidades", mapaEspecialidades);
 				request.setAttribute("consultasUsuarioLogado", consultasPorUsuarioLogado);
 				request.getRequestDispatcher("minhas-consultas.jsp").forward(request, response);
 			} catch (Exception e) {
